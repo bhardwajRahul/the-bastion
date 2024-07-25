@@ -45,6 +45,7 @@ action_static() {
     cd docs
     for file in *.1; do
         action_detail "/usr/local/man/man1/$file"
+        mkdir -p /usr/local/man/man1/
         install -m 0644 "$file" /usr/local/man/man1/
     done
     action_done
@@ -54,7 +55,7 @@ action_static() {
 
 # only used when/if the API is down and we're in CI mode
 default_urls() {
-    local ver="1.1.7.0"
+    local ver="1.1.7.1"
     local rpmver="${ver}-1"
     local list="
         -${rpmver}.aarch64.rpm

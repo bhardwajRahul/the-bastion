@@ -5,7 +5,7 @@ use common::sense;
 use Fcntl;
 use POSIX qw(strftime);
 
-our $VERSION = '3.16.01';
+our $VERSION = '3.16.99-rc1';
 
 BEGIN {
     # only used by the handler below
@@ -735,9 +735,14 @@ sub is_valid_port {
 }
 
 sub is_valid_remote_user {
-    my %params = @_;
-    my $user   = $params{'user'};
-    if ($user =~ /^([a-zA-Z0-9._@!-]{1,128})$/) {
+    my %params         = @_;
+    my $user           = $params{'user'};
+    my $allowWildcards = $params{'allowWildcards'};
+
+    # if allowWildcards, then additional chars are allowed in the regex
+    my $extraChars = ($allowWildcards ? '?*' : '');
+
+    if ($user =~ /^([\Q${extraChars}\Ea-zA-Z0-9._@!-]{1,128})$/) {
         return R('OK', value => $1);
     }
     return R('ERR_INVALID_PARAMETER', msg => "Specified user doesn't seem to be valid");
@@ -1145,6 +1150,8 @@ sub build_ttyrec_cmdline_part1of2 {
     push @ttyrec, '-v' if $params{'debug'};
     push @ttyrec, '-T', 'always' if $params{'tty'};
     push @ttyrec, '-T', 'never'  if $params{'notty'};
+    push @ttyrec, '--stealth-stdout' if $params{'stealth_stdout'};
+    push @ttyrec, '--stealth-stderr' if $params{'stealth_stderr'};
 
     my $fnret = OVH::Bastion::account_config(
         account => $params{'account'},
@@ -1195,9 +1202,6 @@ sub build_ttyrec_cmdline_part2of2 {
             push @cmd, '--warn-before-kill', $warnBeforeKillSeconds if $warnBeforeKillSeconds;
         }
     }
-
-    push @cmd, '--stealth-stdout' if $params{'stealth_stdout'};
-    push @cmd, '--stealth-stderr' if $params{'stealth_stderr'};
 
     my $ttyrecAdditionalParameters = OVH::Bastion::config('ttyrecAdditionalParameters')->value;
     push @cmd, @$ttyrecAdditionalParameters if @$ttyrecAdditionalParameters;
